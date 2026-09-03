@@ -1,13 +1,13 @@
 from pdf_reader import extract_text_from_pdf
 
 
-def create_chunks(pages, chunk_size=500, overlap=50):
+def create_chunks(pages, chunk_size=1000, overlap=200):
     chunks = []
 
     chunk_id = 0
 
     for page in pages:
-        text = page["text"]
+        text = page["text"].strip()
         page_number = page["page"]
 
         start = 0
@@ -46,4 +46,3 @@ if __name__ == "__main__":
         print(f"Chunk ID: {chunk['chunk_id']}")
         print(f"Page: {chunk['page']}")
         print(chunk["text"])
-        

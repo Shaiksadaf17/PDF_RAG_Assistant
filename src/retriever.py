@@ -1,10 +1,26 @@
 import faiss
-
 from sentence_transformers import SentenceTransformer
 
 from pdf_reader import extract_text_from_pdf
 from chunker import create_chunks
-from embedder import create_embeddings
+
+
+PDF_PATH = "documents/Hybrid_CNN-Transformer_ECG_Arrhythmia_Research_Paper_Revised.pdf"
+
+
+def create_index(chunks, model):
+    texts = [chunk["text"] for chunk in chunks]
+
+    embeddings = model.encode(
+        texts,
+        convert_to_numpy=True,
+        show_progress_bar=True
+    )
+
+    index = faiss.IndexFlatL2(embeddings.shape[1])
+    index.add(embeddings.astype("float32"))
+
+    return index
 
 
 def search(query, index, chunks, model, top_k=5):
@@ -20,16 +36,10 @@ def search(query, index, chunks, model, top_k=5):
 
     results = []
 
-    for distance, index_position in zip(distances[0], indices[0]):
-        if index_position == -1:
-            continue
-
-        chunk = chunks[index_position]
-
+    for distance, position in zip(distances[0], indices[0]):
         results.append({
-            "chunk_id": chunk["chunk_id"],
-            "page": chunk["page"],
-            "text": chunk["text"],
+            "page": chunks[position]["page"],
+            "text": chunks[position]["text"],
             "distance": float(distance)
         })
 
@@ -37,19 +47,28 @@ def search(query, index, chunks, model, top_k=5):
 
 
 if __name__ == "__main__":
-    pdf_path = "documents/Hybrid_CNN-Transformer_ECG_Arrhythmia_Research_Paper_Revised.pdf"
 
-    pages = extract_text_from_pdf(pdf_path)
+    print("Loading PDF...")
+
+    pages = extract_text_from_pdf(PDF_PATH)
     chunks = create_chunks(pages)
+
+    print(f"Pages: {len(pages)}")
+    print(f"Chunks: {len(chunks)}")
+
+    print("\nLoading embedding model...")
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    embeddings = create_embeddings(chunks)
+    print("\nCreating FAISS index...")
 
-    index = faiss.IndexFlatL2(embeddings.shape[1])
-    index.add(embeddings.astype("float32"))
+    index = create_index(chunks, model)
 
-    question = input("\nWhat is the beat segmentation procedure? ")
+    print(f"Index contains {index.ntotal} vectors.")
+
+    question = input("\nAsk a question about the PDF: ")
+
+    print("\nSearching...")
 
     results = search(
         question,
