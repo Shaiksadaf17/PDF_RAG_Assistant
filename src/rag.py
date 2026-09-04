@@ -1,13 +1,13 @@
 import fitz
 import faiss
 import numpy as np
-import ollama
+import os
+from google import genai
 
 from sentence_transformers import SentenceTransformer
 
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-LLM_MODEL = "llama3.2:3b"
 
 
 # Load embedding model once
@@ -157,17 +157,16 @@ QUESTION:
 ANSWER:
 """
 
-    response = ollama.chat(
-        model=LLM_MODEL,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+    client = genai.Client(
+        api_key=os.environ["GEMINI_API_KEY"]
     )
 
-    return response["message"]["content"]
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
+
+    return response.text
 
 
 def answer_question(pdf_path, question):

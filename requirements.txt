@@ -1,3 +1,6 @@
-﻿PyMuPDF
+﻿streamlit
+PyMuPDF
 faiss-cpu
-ollama
+numpy
+sentence-transformers
+google-genai
